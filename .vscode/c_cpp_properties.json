@@ -1,0 +1,51 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "Core/Inc",
+                "BSP",
+                "Drivers/STM32H7xx_HAL_Driver/Inc",
+                "Drivers/STM32H7xx_HAL_Driver/Inc/Legacy",
+                "Middlewares/Third_Party/FreeRTOS/Source/include",
+                "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS",
+                "Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F",
+                "Drivers/CMSIS/Device/ST/STM32H7xx/Include",
+                "Drivers/CMSIS/Include"
+            ],
+            "defines": [
+                "USE_HAL_DRIVER",
+                "STM32H750xx",
+                "ARM_MATH_CM7"
+            ],
+            "compilerPath": "/usr/local/bin/arm-none-eabi-gcc",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "gcc-arm"
+        },
+        {
+            "name": "wsl",
+            "includePath": [
+                "Core/Inc",
+                "BSP",
+                "Drivers/STM32H7xx_HAL_Driver/Inc",
+                "Drivers/STM32H7xx_HAL_Driver/Inc/Legacy",
+                "Middlewares/Third_Party/FreeRTOS/Source/include",
+                "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS",
+                "Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F",
+                "Drivers/CMSIS/Device/ST/STM32H7xx/Include",
+                "Drivers/CMSIS/Include"
+            ],
+            "defines": [
+                "USE_HAL_DRIVER",
+                "STM32H750xx",
+                "ARM_MATH_CM7"
+            ],
+            "compilerPath": "c:/Program Files (x86)/GNU Arm Embedded Toolchain/10 2021.07/bin/arm-none-eabi-gcc.exe",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "gcc-arm"
+        }
+    ],
+    "version": 4
+}
