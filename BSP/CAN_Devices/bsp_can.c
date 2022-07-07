@@ -1,138 +1,82 @@
 #include "bsp_can.h"
 
-#define get_motor_measure(ptr, data)                                   \
-	{                                                                  \
-		(ptr)->last_ecd = (ptr)->ecd;                                  \
-		(ptr)->ecd = (uint16_t)((data)[0] << 8 | (data)[1]);           \
-		(ptr)->speed_rpm = (uint16_t)((data)[2] << 8 | (data)[3]);     \
-		(ptr)->given_current = (uint16_t)((data)[4] << 8 | (data)[5]); \
-		(ptr)->temperate = (data)[6];}
-
-typedef union
-{
-	uint8_t raw[8];
-
-	struct __packed
-	{
-		uint32_t axis_error;
-		uint8_t axis_current_state;
-		uint8_t __reserved_1;
-		uint8_t __reserved_2;
-		uint8_t ctrl_status;
-	} hb_info;
-
-	struct __packed
-	{
-		float pos;
-		float vel;
-	} enc_info;
-
-}odrv_heartbeat_data_t;
+#define BSP_CAN_LOG_Error(format)  LOG_COLOR_E "[bsp_can.c]" LOG_RESET_COLOR ":\t" format "\n"
+#define BSP_CAN_LOGE(format, ...) uart_printf(BSP_CAN_LOG_Error(format), ##__VA_ARGS__)
 
 
-typedef enum{
-    CAN_CHASSIS_ALL_ID = 0x200,
-    CAN_3508_M1_ID = 0x201,
-    CAN_3508_M2_ID = 0x202,
-    CAN_3508_M3_ID = 0x203,
-    CAN_3508_M4_ID = 0x204,
+static bsp_can_device_t * root_dev = NULL;
 
-    CAN_YAW_MOTOR_ID = 0x205,
-    CAN_PIT_MOTOR_ID = 0x206,
-    CAN_TRIGGER_MOTOR_ID = 0x207,
-    CAN_GIMBAL_ALL_ID = 0x1FF,
-    CAN_ODRV1_AXIS1_ID = 0x010
-} can_msg_id_e;
 
-extern Vel_Motor_t *vel_motors[3];
+inline void __bsp_fdcan_send8(FDCAN_HandleTypeDef *hfdcan, uint32_t id, uint8_t *pTxData){
+	static FDCAN_TxHeaderTypeDef txHeader;
+	uint32_t freeLevel;
+	txHeader.Identifier = id;
+	txHeader.IdType = FDCAN_STANDARD_ID;
+	txHeader.TxFrameType = FDCAN_DATA_FRAME;
+	txHeader.DataLength = FDCAN_DLC_BYTES_8;
+	txHeader.BitRateSwitch = FDCAN_BRS_OFF;
+	txHeader.FDFormat = FDCAN_CLASSIC_CAN;
+	txHeader.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
+	txHeader.ErrorStateIndicator = FDCAN_ESI_PASSIVE;
+	HAL_FDCAN_AddMessageToTxFifoQ(hfdcan, &txHeader, pTxData);
+	freeLevel = HAL_FDCAN_GetTxFifoFreeLevel(hfdcan);
+	if (freeLevel == 0){
+		BSP_CAN_LOGE("no free fifo");
+	}
+}
+
+
 void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 {
 	FDCAN_RxHeaderTypeDef rx_header;
-	uint8_t odrv_id;
-	uint8_t odrv_type;
+	bsp_can_device_t const * dev = root_dev;
 	uint8_t __aligned(4) rx_data[8];
-	odrv_heartbeat_data_t * odrv_data = (odrv_heartbeat_data_t *)rx_data;
-	Vel_Motor_t * motor;
-	//TODO:control 3508
+
 	HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &rx_header, rx_data);
-	switch(rx_header.Identifier) {
-		case H750:
-		{
+	while (dev != NULL){
+		dev->rx_cb(&rx_header, rx_data);
+		dev = dev->next;
+	}
+}
 
-		}break;
-		case CAN_3508_M1_ID:
-		case CAN_3508_M2_ID:
-		case CAN_3508_M3_ID:
-		case CAN_3508_M4_ID:
-		case CAN_YAW_MOTOR_ID:
-		case CAN_PIT_MOTOR_ID:
-		case CAN_TRIGGER_MOTOR_ID:
-		{
-			static uint8_t i = 0;
-			i = rx_header.Identifier - CAN_3508_M1_ID;
-			get_motor_measure(&motor_chassis[i], rx_data);
-			field[i].rudder_motor.speed = motor_chassis[i].speed_rpm;
 
-			if(motor_chassis[i].ecd - motor_chassis[i].last_ecd > 4096)
-				motor_chassis[i].circle--;
-			else if(motor_chassis[i].ecd - motor_chassis[i].last_ecd < -4096)
-				motor_chassis[i].circle++;
+void bsp_can_add_device(bsp_can_device_t * device){
+	bsp_can_device_t * p = root_dev;
+	if (device == NULL){
+		return;
+	}
+	device->next = NULL;
 
-			field[i].rudder_motor.angle = motor_chassis[i].ecd * 360 / 8192.0;
-			field[i].rudder_motor.circle = motor_chassis[i].circle;
-			field[i].rudder_motor.absolute_angle =
-				(float32_t)((field[i].rudder_motor.angle +
-							 field[i].rudder_motor.circle * 360) /
-							ratio) -
-				field[i].rudder_motor.base_angle;
-		} break;
-		
-		case AXIS0_NODE_ID | 0x01:
-		case AXIS1_NODE_ID | 0x01:
-		case AXIS2_NODE_ID | 0x01:
-		case AXIS0_NODE_ID | 0x09:
-		case AXIS1_NODE_ID | 0x09:
-		case AXIS2_NODE_ID | 0x09:
-		{
-			// odrv encoder estimate
-			odrv_id   = rx_header.Identifier & 0b11111100000;
-			odrv_type = rx_header.Identifier & 0b00000011111;
-			switch (odrv_id)
-			{
-			case AXIS0_NODE_ID:
-				motor = vel_motors[0];
-				break;
-			case AXIS1_NODE_ID:
-				motor = vel_motors[1];
-				break;
-			case AXIS2_NODE_ID:
-				motor = vel_motors[2];
-				break;
-			
-			default:
-				return;
-				break;
+	if (root_dev == NULL){
+		root_dev = device;
+	} else {
+		while (p->next != NULL) {
+			p = root_dev->next;
+		}
+
+		p->next = device;
+
+	}
+}
+
+void bsp_can_delete_device(const bsp_can_device_t * device){
+	bsp_can_device_t * p = root_dev;
+	if (device == NULL){
+		return;
+	}
+
+	if (root_dev == device){
+		root_dev = root_dev->next;
+	} else {
+		while (p != NULL){
+			if (p->next == device) {
+				p = p->next->next;
 			}
-
-			switch (odrv_type)
-			{
-			case 0x001:{
-				motor->odrive_get_axis.axis_error = odrv_data->hb_info.axis_error;
-				motor->odrive_get_axis.axis_current_state = odrv_data->hb_info.axis_current_state;
-			} break;
-
-			case 0x009:{
-				motor->odrive_get_axis.encoder_vel_estimate = odrv_data->enc_info.vel;
-				motor->odrive_get_axis.encoder_pos_estimate = odrv_data->enc_info.pos;
-			} break;
-			
-			default:
-				break;
-			}
-		}break;
-
-		default: {
-			break;
+			p = p->next;
 		}
 	}
+}
+
+void bsp_can_send_message(bsp_can_device_t * dev, uint32_t id, uint8_t *data){
+	__bsp_fdcan_send8(dev->hfdcan, id, data);
 }

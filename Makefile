@@ -79,7 +79,14 @@ Middlewares/Third_Party/FreeRTOS/Source/tasks.c \
 Middlewares/Third_Party/FreeRTOS/Source/timers.c \
 Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.c \
 Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.c \
-Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/port.c  
+Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/port.c \
+BSP/CAN_Devices/bsp_can.c
+
+CPP_SOURCES = \
+BSP/ControllerPID/MotorPID.cpp \
+BSP/CarTasks/MotorRoutinsTask.cpp \
+BSP/CAN_Devices/Dji_CAN_motors.cpp \
+BSP/CAN_Devices/Odrive_CAN_motors.cpp 
 
 # ASM sources
 ASM_SOURCES =  \
@@ -99,6 +106,7 @@ CP = $(GCC_PATH)/$(PREFIX)objcopy
 SZ = $(GCC_PATH)/$(PREFIX)size
 else
 CC = $(PREFIX)gcc
+CX = $(PREFIX)g++
 AS = $(PREFIX)gcc -x assembler-with-cpp
 CP = $(PREFIX)objcopy
 SZ = $(PREFIX)size
@@ -184,13 +192,20 @@ all: $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).hex $(BUILD_DIR)/$(TARGET
 # list of objects
 OBJECTS = $(addprefix $(BUILD_DIR)/,$(notdir $(C_SOURCES:.c=.o)))
 vpath %.c $(sort $(dir $(C_SOURCES)))
+
+OBJECTS += $(addprefix $(BUILD_DIR)/,$(notdir $(CPP_SOURCES:.cpp=.o)))
+vpath %.cpp $(sort $(dir $(CPP_SOURCES)))
+
 # list of ASM program objects
 OBJECTS += $(addprefix $(BUILD_DIR)/,$(notdir $(ASM_SOURCES:.s=.o)))
 vpath %.s $(sort $(dir $(ASM_SOURCES)))
 
+$(BUILD_DIR)/%.o: %.cpp Makefile | $(BUILD_DIR) 
+	@$(CX) -c $(CFLAGS) $< -o $@
+	@echo "[\033[32mcpp\033[0m] $@"
+
 $(BUILD_DIR)/%.o: %.c Makefile | $(BUILD_DIR) 
 	@$(CC) -c $(CFLAGS) $< -o $@
-# @$(CC) -c $(CFLAGS) -Wa,-a,-ad,-alms=$(BUILD_DIR)/$(notdir $(<:.c=.lst)) $< -o $@
 	@echo "[\033[32m c \033[0m] $@"
 
 $(BUILD_DIR)/%.o: %.s Makefile | $(BUILD_DIR)

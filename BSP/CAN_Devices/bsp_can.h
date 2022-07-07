@@ -8,145 +8,23 @@ extern "C" {
 #include "fdcan.h"
 
 
-#define AXIS0_NODE_ID  (1<<5) // 逆时针为正，CAN_ID分别为123
-#define AXIS1_NODE_ID  (2<<5)
-#define AXIS2_NODE_ID  (3<<5)
-#define F405 0x106
-#define H750 0x107
-
-typedef enum
+typedef struct _bsp_can_device_t
 {
-    AXIS_0 = 0,
-    AXIS_1 = 1,
-	AXIS_2 = 2
-} Axis_t;
-typedef struct{
-    uint16_t ecd;
-    int16_t speed_rpm;
-    int16_t given_current;
-    uint8_t temperate;
-    int16_t last_ecd;
-	int16_t circle;
-} motor_measure_t;
-typedef enum{
-    CAN_CHASSIS_ALL_ID = 0x200,
-    CAN_3508_M1_ID = 0x201,
-    CAN_3508_M2_ID = 0x202,
-    CAN_3508_M3_ID = 0x203,
-    CAN_3508_M4_ID = 0x204,
-
-    CAN_YAW_MOTOR_ID = 0x205,
-    CAN_PIT_MOTOR_ID = 0x206,
-    CAN_TRIGGER_MOTOR_ID = 0x207,
-    CAN_GIMBAL_ALL_ID = 0x1FF,
-    CAN_ODRV1_AXIS1_ID = 0x010
-} can_msg_id_e;
-typedef struct OdriveAxisGetState_t{
-    uint32_t axis_error;
-    uint32_t axis_current_state;
-    uint32_t motor_error;
-    uint32_t encoder_error;
-    uint32_t sensorless_error;
-    float encoder_pos_estimate;
-    float encoder_vel_estimate;
-    int32_t encoder_shadow_count;
-    int32_t encoder_cpr_count;
-    float iq_setpoint;
-    float iq_measured;
-    float sensorless_pos_estimate;
-    float sensorless_vel_estimate;
-    float vbus_voltage;
-} OdriveAxisGetState_t;
-
-typedef struct OdriveAxisSetState_t
-{
-    uint16_t axis_node_id;
-    uint32_t requested_state;
-    int32_t control_mode;
-    int32_t input_mode;
-    int16_t vel_ff;
-    int16_t current_ff;
-    int32_t input_pos;
-    float input_vel;
-    float torque_vel;
-    int32_t input_current;
-    float vel_limit;
-    float traj_vel_limit;
-    float traj_accel_limit;
-    float traj_decel_limit;
-    float traj_a_per_css;
-} OdriveAxisSetState_t;
-
-typedef enum
-{
-    MSG_CO_NMT_CTRL = 0x000, // CANOpen NMT Message REC
-    MSG_ODRIVE_HEARTBEAT,
-    MSG_ODRIVE_ESTOP,
-    MSG_GET_MOTOR_ERROR, // Errors
-    MSG_GET_ENCODER_ERROR,
-    MSG_GET_SENSORLESS_ERROR,
-    MSG_SET_AXIS_NODE_ID,
-    MSG_SET_AXIS_REQUESTED_STATE,
-    MSG_SET_AXIS_STARTUP_CONFIG,
-    MSG_GET_ENCODER_ESTIMATES,
-    MSG_GET_ENCODER_COUNT,
-    MSG_SET_CONTROLLER_MODES,
-    MSG_SET_INPUT_POS,
-    MSG_SET_INPUT_VEL = 0x00D,
-    MSG_SET_INPUT_CURRENT,
-    MSG_SET_VEL_LIMIT,
-    MSG_START_ANTICOGGING,
-    MSG_SET_TRAJ_VEL_LIMIT,
-    MSG_SET_TRAJ_ACCEL_LIMITS,
-    MSG_SET_TRAJ_A_PER_CSS,
-    MSG_GET_IQ,
-    MSG_GET_SENSORLESS_ESTIMATES,
-    MSG_RESET_ODRIVE,
-    MSG_GET_VBUS_VOLTAGE,
-    MSG_CLEAR_ERRORS,
-    MSG_CO_HEARTBEAT_CMD = 0x700, // CANOpen NMT Heartbeat  SEND
-} Odrive_Command;
-
-typedef enum {
-    AXIS_STATE_UNDEFINED = 0,           //<! will fall through to idle
-    AXIS_STATE_IDLE = 1,                //<! disable PWM and do nothing
-    AXIS_STATE_STARTUP_SEQUENCE = 2, //<! the actual sequence is defined by the config.startup_... flags
-    AXIS_STATE_FULL_CALIBRATION_SEQUENCE = 3,   //<! run all calibration procedures, then idle
-    AXIS_STATE_MOTOR_CALIBRATION = 4,   //<! run motor calibration
-    AXIS_STATE_SENSORLESS_CONTROL = 5,  //<! run sensorless control
-    AXIS_STATE_ENCODER_INDEX_SEARCH = 6, //<! run encoder index search
-    AXIS_STATE_ENCODER_OFFSET_CALIBRATION = 7, //<! run encoder offset calibration
-    AXIS_STATE_CLOSED_LOOP_CONTROL = 8  //<! run closed loop control
-} Odrive_AxisState_t;
-
-typedef enum {
-    ODRV_CONTROL_INPUTMODE_IDSABLE = 0,
-    ODRV_CONTROL_INPUTMODE_PASSTHROUGH = 1,
-    ODRV_CONTROL_INPUTMODE_VEL_RAMP = 2,
-    ODRV_CONTROL_INPUTMODE_POS_FILTER = 3,
-    ODRV_CONTROL_INPUTMODE_TRAP_TRAJ = 5,
-    ODRV_CONTROL_INPUTMODE_TORQUE_RAMP = 6,
-} Odrive_Controller_inputMode;
-
-typedef enum {
-    ODRV_CONTROL_CTRLMODE_VOLTAGE = 0,
-    ODRV_CONTROL_CTRLMODE_TORQUE = 1,
-    ODRV_CONTROL_CTRLMODE_VELOCITY = 2,
-    ODRV_CONTROL_CTRLMODE_POSITION = 3,
-} Odrive_Controller_ctrlMode;
-
-typedef struct _Pos{
-    float Pos_x;
-    float Pos_y;
-    float Pos_angle;
-}Pos_t;
-typedef struct _Chassis_Info {
-	float Pan_Speed;	// *平移速度 
-	float Spinning_speed;	// *旋转速度
-	Pos_t position;	// *车身现在的位置
-}Chassis_Info_t;
+    struct _bsp_can_device_t * next;
+    FDCAN_HandleTypeDef * hfdcan;
+    void (*rx_cb)(FDCAN_RxHeaderTypeDef *pRxHeader, uint8_t *pRxData);
+} bsp_can_device_t;
 
 
+void __bsp_fdcan_send8(FDCAN_HandleTypeDef *hfdcan, uint32_t id, uint8_t *pTxData);
+#define BSP_FDCAN_SendMsg_8(bus, id, msg) __bsp_fdcan_send8(&hfdcan ## bus, id, msg)
+#define BSP_FDCAN1_SendMsg_8(id, msg) FDCAN_SendMsg_8(1, id, msg)
+#define BSP_FDCAN2_SendMsg_8(id, msg) FDCAN_SendMsg_8(2, id, msg)
+
+void bsp_can_add_device(bsp_can_device_t * device);
+void bsp_can_delete_device(const bsp_can_device_t * device);
+
+void bsp_can_send_message(bsp_can_device_t * dev, uint32_t id, uint8_t *data);
 
 #ifdef __cplusplus
 }
