@@ -50,6 +50,18 @@
 osThreadId initMotorDirectHandle;
 uint32_t initMotorDirectBuffer[ 1024 ];
 osStaticThreadDef_t initMotorDirectControlBlock;
+osThreadId MotorRoutineTaskHandle;
+uint32_t MotorRoutineTaskBuffer[ 1024 ];
+osStaticThreadDef_t MotorRoutineTaskControlBlock;
+osThreadId SerialCmdProcTaskHandle;
+uint32_t SerialCmdProcTaskBuffer[ 128 ];
+osStaticThreadDef_t SerialCmdProcTaskControlBlock;
+osMessageQId qMotorTimeupHandle;
+uint8_t qMotorTimeupBuffer[ 1 * sizeof( uint8_t ) ];
+osStaticMessageQDef_t qMotorTimeupControlBlock;
+osMessageQId qSerialPackHandle;
+uint8_t qSerialPackBuffer[ 8 * sizeof( uint32_t ) ];
+osStaticMessageQDef_t qSerialPackControlBlock;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -57,6 +69,8 @@ osStaticThreadDef_t initMotorDirectControlBlock;
 /* USER CODE END FunctionPrototypes */
 
 void initMotorDirectionTaskFunc(void const * argument);
+extern void motorRoutineTaskFunc(void const * argument);
+extern void serialCmdProcTaskFunc(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -85,25 +99,14 @@ return 0;
 /* USER CODE BEGIN 4 */
 __weak void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName)
 {
-   /* Run time stack overflow checking is performed if
-   configCHECK_FOR_STACK_OVERFLOW is defined to 1 or 2. This hook function is
-   called if a stack overflow is detected. */
+  ST_LOGE("task overflow detected");
 }
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN 5 */
 __weak void vApplicationMallocFailedHook(void)
 {
-   /* vApplicationMallocFailedHook() will only be called if
-   configUSE_MALLOC_FAILED_HOOK is set to 1 in FreeRTOSConfig.h. It is a hook
-   function that will get called if a call to pvPortMalloc() fails.
-   pvPortMalloc() is called internally by the kernel whenever a task, queue,
-   timer or semaphore is created. It is also called by various parts of the
-   demo application. If heap_1.c or heap_2.c are used, then the size of the
-   heap available to pvPortMalloc() is defined by configTOTAL_HEAP_SIZE in
-   FreeRTOSConfig.h, and the xPortGetFreeHeapSize() API function can be used
-   to query the size of free heap space that remains (although it does not
-   provide information on how the remaining heap might be fragmented). */
+   ST_LOGE("malloc fail detected");
 }
 /* USER CODE END 5 */
 
@@ -142,6 +145,15 @@ void MX_FREERTOS_Init(void) {
   /* start timers, add new ones, ... */
   /* USER CODE END RTOS_TIMERS */
 
+  /* Create the queue(s) */
+  /* definition and creation of qMotorTimeup */
+  osMessageQStaticDef(qMotorTimeup, 1, uint8_t, qMotorTimeupBuffer, &qMotorTimeupControlBlock);
+  qMotorTimeupHandle = osMessageCreate(osMessageQ(qMotorTimeup), NULL);
+
+  /* definition and creation of qSerialPack */
+  osMessageQStaticDef(qSerialPack, 8, uint32_t, qSerialPackBuffer, &qSerialPackControlBlock);
+  qSerialPackHandle = osMessageCreate(osMessageQ(qSerialPack), NULL);
+
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
   /* USER CODE END RTOS_QUEUES */
@@ -150,6 +162,14 @@ void MX_FREERTOS_Init(void) {
   /* definition and creation of initMotorDirect */
   osThreadStaticDef(initMotorDirect, initMotorDirectionTaskFunc, osPriorityNormal, 0, 1024, initMotorDirectBuffer, &initMotorDirectControlBlock);
   initMotorDirectHandle = osThreadCreate(osThread(initMotorDirect), NULL);
+
+  /* definition and creation of MotorRoutineTask */
+  osThreadStaticDef(MotorRoutineTask, motorRoutineTaskFunc, osPriorityRealtime, 0, 1024, MotorRoutineTaskBuffer, &MotorRoutineTaskControlBlock);
+  MotorRoutineTaskHandle = osThreadCreate(osThread(MotorRoutineTask), NULL);
+
+  /* definition and creation of SerialCmdProcTask */
+  osThreadStaticDef(SerialCmdProcTask, serialCmdProcTaskFunc, osPriorityIdle, 0, 128, SerialCmdProcTaskBuffer, &SerialCmdProcTaskControlBlock);
+  SerialCmdProcTaskHandle = osThreadCreate(osThread(SerialCmdProcTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */

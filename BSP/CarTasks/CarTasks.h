@@ -5,8 +5,12 @@
 extern "C" {
 #endif
 
-void MotorRoutinsTask(void * pvArgc);
+#include "FreeRTOS.h"
+#include "task.h"
+#include "queue.h"
+#include "semphr.h"
 
+#include "cmsis_os.h"
 
 #ifdef __cplusplus
 }
