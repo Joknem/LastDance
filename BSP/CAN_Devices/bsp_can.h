@@ -8,11 +8,16 @@ extern "C" {
 #include "fdcan.h"
 
 
+typedef enum {
+    BSP_CAN_RX_CB_VALUE_VALID   = 0,
+    BSP_CAN_RX_CB_VALUE_INVALID = 1
+} bsp_can_rx_cb_ret_e;
+
 typedef struct _bsp_can_device_t
 {
     struct _bsp_can_device_t * next;
     FDCAN_HandleTypeDef * hfdcan;
-    void (*rx_cb)(FDCAN_RxHeaderTypeDef *pRxHeader, uint8_t *pRxData);
+    bsp_can_rx_cb_ret_e (*rx_cb)(FDCAN_RxHeaderTypeDef *pRxHeader, uint8_t *pRxData);
 } bsp_can_device_t;
 
 

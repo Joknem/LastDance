@@ -9,7 +9,7 @@ public:
     MotorPID()
     {}
 
-    const float DCE_INTEGRAL_LIMIT = 500;
+    const float DCE_INTEGRAL_LIMIT = 4000;
 
     struct DCE_t
     {
@@ -17,8 +17,8 @@ public:
         float kv;
         float ki;
         float kd;
-        float setPointPos;
-        float setPointVel;
+        // float setPointPos;
+        // float setPointVel;
         float integralPos;
         float integralVel;
         float lastError;
@@ -26,20 +26,13 @@ public:
     };
     DCE_t dce;
 
-    float angle;
-    float velocity;
+    float * angle;
+    float * velocity;
 
-    void UpdateVelocity();
-    void SetEnable(bool _enable);
     void SetTorqueLimit(float _percent);
     float CalcDceOutput(float _inputPos, float _inputVel);
 
 private:
-    bool isEnabled;
-    float lastAngle;
-    float limitAngleMin;
-    float limitAngleMax;
-    float limitVelocity;
     float limitTorque; // 0~0.1
 };
 

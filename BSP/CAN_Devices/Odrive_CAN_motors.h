@@ -1,7 +1,7 @@
 #ifndef ODRIVE_CAN_MOTORS_H
 #define ODRIVE_CAN_MOTORS_H
 
-
+#include <cstdint>
 
 #define AXIS0_NODE_ID  (1<<5) // 逆时针为正，CAN_ID分别为123
 #define AXIS1_NODE_ID  (2<<5)
