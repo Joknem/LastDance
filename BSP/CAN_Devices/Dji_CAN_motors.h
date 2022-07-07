@@ -6,19 +6,7 @@
 
 class DjiMotor {
 public:
-    DjiMotor(){
-        pid.SetTorqueLimit(0.80);
-        pid.dce.kp = 12.0;
-        pid.dce.ki = 1.223;
-        pid.dce.kv = 3.0;
-        pid.dce.kd = 1.23;
-
-        pid.angle = &angle;
-        pid.velocity = &speed;
-
-        ratio = (36 * 90 / 17);
-        base_angle = 0.f;
-    }
+    DjiMotor();
 
     struct motor_measure_t{
         uint16_t ecd;
@@ -58,23 +46,29 @@ private:
 
 class DjiMotorGroup{
 public:
+    DjiMotorGroup(){
+        DjiMotorGroup(&hfdcan2, true);
+    }
     DjiMotorGroup(FDCAN_HandleTypeDef * _hfdcan, bool _isLowerIdentityGroup);
     
 
     DjiMotor motor[4];
     void SetInput(uint8_t id, float p, float v);
     void output(void);
+    void stop(void);
 private:
 
     void setCurrent(int16_t val[4]); 
     bsp_can_device_t can_devices;
     uint32_t ID_tx;
+    bool is_force_stop = false;
 
 
 };
 
 
 void DjiCanMotorsInit(void);
+// void DjiCanMotorsForceStop(void);
 
 
 

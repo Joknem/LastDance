@@ -3,8 +3,8 @@
 #include "CAN_Devices/Dji_CAN_motors.h"
 #include "tim.h"
 
-extern DjiMotorGroup *djiMotorGroupLowerId;
-extern DjiMotorGroup *djiMotorGroupHigherId;
+extern DjiMotorGroup djiMotorGroupLowerId;
+extern DjiMotorGroup djiMotorGroupHigherId;
 
 extern osMessageQId qMotorTimeupHandle;
 
@@ -17,11 +17,12 @@ static void motorTimeupCallback(TIM_HandleTypeDef * htim){
 
     
 }
-
-void MotorRoutinsTask(void *pvArgc)
+extern volatile float angle_test;
+void motorRoutineTaskFunc(void const * argument)
 {
     // TODO
     char * __ptr;
+    uint32_t cnt;
     // motor init
     DjiCanMotorsInit();
 
@@ -36,13 +37,24 @@ void MotorRoutinsTask(void *pvArgc)
             // dji motor cal area
             for (int i = 0; i < 4; i++)
             {
-                djiMotorGroupLowerId->SetInput(i, 0, 0);
-                djiMotorGroupHigherId->SetInput(i, 0, 0);
+                djiMotorGroupLowerId.SetInput(i, angle_test, 0);
+                // djiMotorGroupHigherId.SetInput(i, 0, 0);
             }
-            djiMotorGroupLowerId->output();
-            djiMotorGroupHigherId->output();
+            djiMotorGroupLowerId.output();
+            
+            // djiMotorGroupHigherId->output();
 
             // odrive motor cal area
+
+
+            // end process
+            cnt ++;
+            if (cnt > 200){
+                // ST_LOGI("m1 out : (%.2f,%.2f)\t(%.2f,%.2f)\t(%.2f,%.2f)",   djiMotorGroupLowerId.motor[0].angle, djiMotorGroupLowerId.motor[0].output,
+                //                                                             djiMotorGroupLowerId.motor[1].angle, djiMotorGroupLowerId.motor[1].output,
+                //                                                             djiMotorGroupLowerId.motor[2].angle, djiMotorGroupLowerId.motor[2].output);
+                cnt = 0;
+            }
         }
     }
 }

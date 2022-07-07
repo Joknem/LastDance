@@ -17,11 +17,19 @@ inline void __bsp_fdcan_send8(FDCAN_HandleTypeDef *hfdcan, uint32_t id, uint8_t 
 	txHeader.BitRateSwitch = FDCAN_BRS_OFF;
 	txHeader.FDFormat = FDCAN_CLASSIC_CAN;
 	txHeader.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
-	txHeader.ErrorStateIndicator = FDCAN_ESI_PASSIVE;
-	HAL_FDCAN_AddMessageToTxFifoQ(hfdcan, &txHeader, pTxData);
+	txHeader.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
+	txHeader.MessageMarker = 0;
+	if (HAL_FDCAN_AddMessageToTxFifoQ(hfdcan, &txHeader, pTxData) != HAL_OK){
+		ST_LOGE("Ret Error");
+		Error_Handler();
+	}
+	
 	freeLevel = HAL_FDCAN_GetTxFifoFreeLevel(hfdcan);
 	if (freeLevel == 0){
-		BSP_CAN_LOGE("no free fifo");
+		BSP_CAN_LOGE("hfdcan%d no free fifo : %lu", hfdcan == &hfdcan1 ? 1 : 2, freeLevel);
+		// Error_Handler();
+	}else{
+		// uart_printf("fifo : %d\n", freeLevel);
 	}
 }
 
@@ -32,13 +40,18 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 	bsp_can_device_t const * dev = root_dev;
 	uint8_t __aligned(4) rx_data[8];
 
-	HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &rx_header, rx_data);
-	while (dev != NULL){
-		if (dev->rx_cb(&rx_header, rx_data) == BSP_CAN_RX_CB_VALUE_VALID){
-			break;
+	while (HAL_FDCAN_GetRxFifoFillLevel(hfdcan, FDCAN_RX_FIFO0) > 0){
+		HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &rx_header, rx_data);
+		dev = root_dev;
+		while (dev != NULL){
+			if (dev->rx_cb(&rx_header, rx_data) == BSP_CAN_RX_CB_VALUE_VALID){
+				break;
+			}
+			dev = dev->next;
 		}
-		dev = dev->next;
 	}
+
+	assert_param(HAL_FDCAN_ActivateNotification(hfdcan, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0) == HAL_OK);
 }
 
 

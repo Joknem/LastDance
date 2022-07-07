@@ -1,7 +1,14 @@
 #include "main.h"
 #include <stdint.h>
 
+#include "fdcan.h"
+#include "tim.h"
+#include "usart.h"
+
+// extern void DjiCanMotorsForceStop(void);
+
 uint32_t BootArgs __attribute__((section(".bootcfg")));
+
 void JumpToBootLoader(void)
 {
   uint32_t i = 0;
@@ -9,6 +16,16 @@ void JumpToBootLoader(void)
   void (*BootJump)(void) = (void (*)(void))(*((uint32_t *)(BootAddr + 4))); 
 
   BootArgs = 1; 
+
+  HAL_UART_DeInit(&huart8);
+  HAL_TIM_Base_Stop_IT(&htim6);
+
+  // stop motor a
+  // DjiCanMotorsForceStop();
+
+  // fdcanWaitPackSendAll(&hfdcan1);
+  // fdcanWaitPackSendAll(&hfdcan2);
+
   /* 关闭全局中断 */
   __disable_irq();
 

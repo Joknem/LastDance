@@ -1,7 +1,7 @@
 #include "CarTasks.h"
 
 
-void initMotorDirectionTaskFunc(void * pvArgc){
+void initMotorDirectionTaskFunc(void const * argument){
     for(;;){
         osDelay(1000);
     }

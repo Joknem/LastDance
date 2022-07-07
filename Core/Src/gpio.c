@@ -22,7 +22,8 @@
 #include "gpio.h"
 
 /* USER CODE BEGIN 0 */
-void JumpToBootLoader(void);
+
+extern void JumpToBootLoader(void);
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
   switch (GPIO_Pin){
     case APP_BOOT_Pin:{

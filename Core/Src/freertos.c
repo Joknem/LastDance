@@ -25,7 +25,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "CarTasks/CarTasks.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -54,7 +54,7 @@ osThreadId MotorRoutineTaskHandle;
 uint32_t MotorRoutineTaskBuffer[ 1024 ];
 osStaticThreadDef_t MotorRoutineTaskControlBlock;
 osThreadId SerialCmdProcTaskHandle;
-uint32_t SerialCmdProcTaskBuffer[ 128 ];
+uint32_t SerialCmdProcTaskBuffer[ 1024 ];
 osStaticThreadDef_t SerialCmdProcTaskControlBlock;
 osMessageQId qMotorTimeupHandle;
 uint8_t qMotorTimeupBuffer[ 1 * sizeof( uint8_t ) ];
@@ -99,7 +99,7 @@ return 0;
 /* USER CODE BEGIN 4 */
 __weak void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName)
 {
-  ST_LOGE("task overflow detected");
+  ST_LOGE("task overflow detected: %s",pcTaskName);
 }
 /* USER CODE END 4 */
 
@@ -168,7 +168,7 @@ void MX_FREERTOS_Init(void) {
   MotorRoutineTaskHandle = osThreadCreate(osThread(MotorRoutineTask), NULL);
 
   /* definition and creation of SerialCmdProcTask */
-  osThreadStaticDef(SerialCmdProcTask, serialCmdProcTaskFunc, osPriorityIdle, 0, 128, SerialCmdProcTaskBuffer, &SerialCmdProcTaskControlBlock);
+  osThreadStaticDef(SerialCmdProcTask, serialCmdProcTaskFunc, osPriorityIdle, 0, 1024, SerialCmdProcTaskBuffer, &SerialCmdProcTaskControlBlock);
   SerialCmdProcTaskHandle = osThreadCreate(osThread(SerialCmdProcTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */

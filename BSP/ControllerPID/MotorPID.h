@@ -19,8 +19,8 @@ public:
         float kd;
         // float setPointPos;
         // float setPointVel;
-        float integralPos;
-        float integralVel;
+        float integralPos = 0.f;
+        float integralVel = 0.f;
         float lastError;
         float output;
     };

@@ -8,12 +8,20 @@ float MotorPID::CalcDceOutput(float _inputPos, float _inputVel)
     float errorVel = _inputVel - *velocity;
     float deltaPos = errorPos - dce.lastError;
     dce.lastError = errorPos;
-    dce.integralPos += errorPos;
+    dce.integralPos += errorPos; // + deltaPos * dce.kd
     if (dce.integralPos > DCE_INTEGRAL_LIMIT) dce.integralPos = DCE_INTEGRAL_LIMIT;
     else if (dce.integralPos < -DCE_INTEGRAL_LIMIT) dce.integralPos = -DCE_INTEGRAL_LIMIT;
     dce.integralVel += errorVel;
     if (dce.integralVel > DCE_INTEGRAL_LIMIT) dce.integralVel = DCE_INTEGRAL_LIMIT;
     else if (dce.integralVel < -DCE_INTEGRAL_LIMIT) dce.integralVel = -DCE_INTEGRAL_LIMIT;
+
+    if (errorPos * dce.lastError < 0.f){
+        dce.integralPos *= 0.1;
+        dce.integralVel *= 0.1;
+    } else {
+        dce.integralPos *= 0.999;
+        dce.integralVel *= 0.999;
+    }
 
     dce.output = dce.kp * errorPos +
                  dce.ki * dce.integralPos +

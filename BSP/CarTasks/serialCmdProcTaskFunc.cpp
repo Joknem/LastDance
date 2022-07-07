@@ -37,11 +37,20 @@ void dog_cmd_start(UART_HandleTypeDef *huart)
     assert_param(HAL_UART_RegisterRxEventCallback(huart, dog_cmd_rx_callback) == HAL_OK);
     assert_param(HAL_UARTEx_ReceiveToIdle_DMA(huart, (uint8_t *)uart_point_buff, UART_BUFF_SIZE) == HAL_OK);
 }
+volatile float angle_test = 0.f;
+static void process_input(const char * cmd, uint16_t pos){
+    float a;
+    sscanf(cmd, "%f", &a);
+    if (fabsf(a) < 180){
+        angle_test = a;
+        ST_LOGI("update angle to : %.2f", angle_test);
+    }
+}
 
-void serialCmdProcTaskFunc(void *pvArgc)
+void serialCmdProcTaskFunc(void const * argument)
 {
     char *dog_cmd_buff = NULL;
-    ST_LOGI("Dog CMD start");
+    ST_LOGI("CMD server start");
     dog_cmd_start(&huart8);
     for (;;)
     {
@@ -59,6 +68,7 @@ void serialCmdProcTaskFunc(void *pvArgc)
             }
             if (pos > 0){
                 // ! cmd process code 
+                process_input(dog_cmd_buff, pos);
             }
         }
     }

@@ -21,7 +21,8 @@
 #include "usart.h"
 
 /* USER CODE BEGIN 0 */
-static char __attribute__((section(".dma_data"))) printf_buff[256];
+// static char __attribute__((section(".dma_data"))) printf_buff[256];
+static char  printf_buff[256];
 int uart_printf(const char *fmt, ...)
 {
 	va_list args;
@@ -31,7 +32,6 @@ int uart_printf(const char *fmt, ...)
 	va_end(args);
 	if (ret > 0)
 	{
-    // osMutexWait(Uart_MutexHandle, 5);
 		HAL_UART_Transmit(&huart8, (uint8_t *)printf_buff, ret, HAL_MAX_DELAY);
 	}
   return ret;
@@ -145,7 +145,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
   /** Initializes the peripherals clock
   */
     PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_UART4;
-    PeriphClkInitStruct.Usart234578ClockSelection = RCC_USART234578CLKSOURCE_HSI;
+    PeriphClkInitStruct.Usart234578ClockSelection = RCC_USART234578CLKSOURCE_D2PCLK1;
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
     {
       Error_Handler();
@@ -198,7 +198,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
   /** Initializes the peripherals clock
   */
     PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_UART8;
-    PeriphClkInitStruct.Usart234578ClockSelection = RCC_USART234578CLKSOURCE_HSI;
+    PeriphClkInitStruct.Usart234578ClockSelection = RCC_USART234578CLKSOURCE_D2PCLK1;
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
     {
       Error_Handler();

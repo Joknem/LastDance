@@ -12,6 +12,10 @@ extern "C" {
 
 #include "cmsis_os.h"
 
+void initMotorDirectionTaskFunc(void const * argument);
+void motorRoutineTaskFunc(void const * argument);
+void serialCmdProcTaskFunc(void const * argument);
+
 #ifdef __cplusplus
 }
 #endif

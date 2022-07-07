@@ -39,8 +39,8 @@ typedef enum
 global variabal
 ********************************
 */
-DjiMotorGroup * djiMotorGroupLowerId = NULL;
-DjiMotorGroup * djiMotorGroupHigherId = NULL;
+DjiMotorGroup  djiMotorGroupLowerId(&hfdcan2, true);
+DjiMotorGroup  djiMotorGroupHigherId(&hfdcan2, false);
 
 
 /* 
@@ -50,8 +50,14 @@ c function part
 */
 
 void DjiCanMotorsInit(void){
-	djiMotorGroupLowerId = new DjiMotorGroup(&hfdcan2, false);
-	djiMotorGroupLowerId = new DjiMotorGroup(&hfdcan2, false);
+	// djiMotorGroupLowerId = new DjiMotorGroup(&hfdcan2, false);
+	// djiMotorGroupHigherId = new DjiMotorGroup(&hfdcan2, false);
+}
+
+void DjiCanMotorsForceStop(void){
+	
+	djiMotorGroupLowerId.stop();
+	djiMotorGroupHigherId.stop();
 }
 
 // rx process
@@ -65,10 +71,10 @@ static bsp_can_rx_cb_ret_e __dii_motors_rx_process(FDCAN_RxHeaderTypeDef *pRxHea
 	}
 
 	// TODO add data to adsobhufwqaehniko;
-	gp = id > 3 ? djiMotorGroupHigherId : djiMotorGroupLowerId;
-	if (djiMotorGroupHigherId == NULL){
-		return BSP_CAN_RX_CB_VALUE_INVALID;
-	}
+	gp = id > 3 ? &djiMotorGroupHigherId : &djiMotorGroupLowerId;
+	// if (djiMotorGroupHigherId == NULL){
+	// 	return BSP_CAN_RX_CB_VALUE_INVALID;
+	// }
 
 	id = id > 3 ? id - 4 : id;
 
@@ -79,8 +85,8 @@ static bsp_can_rx_cb_ret_e __dii_motors_rx_process(FDCAN_RxHeaderTypeDef *pRxHea
 	else if(gp->motor[id].currentState.ecd - gp->motor[id].currentState.last_ecd < -4096)
 		gp->motor[id].currentState.circle++;
 	
-	gp->motor->angle = gp->motor->get_angle(true);
-	gp->motor->speed = gp->motor->currentState.speed_rpm * 1.f;
+	gp->motor[id].angle = gp->motor[id].get_angle(true);
+	gp->motor[id].speed = gp->motor[id].currentState.speed_rpm * 1.f;
 	
 
 	return BSP_CAN_RX_CB_VALUE_VALID;
@@ -110,16 +116,13 @@ void DjiMotorGroup::SetInput(uint8_t id, float p, float v){
 void DjiMotorGroup::output(void){
 	int16_t val[4];
 	for (int i = 0; i < 4; i++){
-		val[i] = motor[i].is_update ? motor[i].output : 0;
+		val[i] = motor[i].is_update == true ? motor[i].output : 0;
 		motor[i].is_update = false;
 	}
 	setCurrent(val);
 }
 
-void DjiMotorGroup::setCurrent(
-	int16_t val[4]
-){
-
+void DjiMotorGroup::setCurrent(int16_t val[4]){
 	static uint8_t chassis_can_send_data[8];
 
 	chassis_can_send_data[0] = val[0] >> 8;
@@ -134,12 +137,33 @@ void DjiMotorGroup::setCurrent(
 	bsp_can_send_message(&can_devices, ID_tx, chassis_can_send_data);
 }
 
+void DjiMotorGroup::stop(void){
+	int16_t val[4] = {0,0,0,0};
+	is_force_stop = true;
+	setCurrent(val);
+}
+
 
 /* 
 ********************************
 c++ class: motor single part
 ********************************
 */
+
+DjiMotor::DjiMotor(){
+	pid.SetTorqueLimit(0.80);
+	pid.dce.kp = 240.f;
+	pid.dce.kd = 4.f;
+
+	pid.dce.ki = 4.0;
+	pid.dce.kv = 1.0;
+
+	pid.angle = &angle;
+	pid.velocity = &speed;
+
+	ratio = (36 * 90 / 17);
+	base_angle = 0.f;
+}
 
 float DjiMotor::get_angle(bool if_cal_circle){
 	float phrase = currentState.ecd * 360 / 8192.0;
