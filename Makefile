@@ -215,7 +215,7 @@ $(BUILD_DIR)/%.o: %.c Makefile | $(BUILD_DIR)
 	@echo "[\033[32m c \033[0m] $@"
 
 $(BUILD_DIR)/%.o: %.s Makefile | $(BUILD_DIR)
-	$(AS) -c $(CFLAGS) $< -o $@
+	@$(AS) -c $(CFLAGS) $< -o $@
 	@echo "[\033[32masm\033[0m] $@"
 
 $(BUILD_DIR)/$(TARGET).elf: $(OBJECTS) Makefile

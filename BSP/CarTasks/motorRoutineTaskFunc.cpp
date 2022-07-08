@@ -1,30 +1,40 @@
 #include "CarTasks.h"
 
 #include "CAN_Devices/Dji_CAN_motors.h"
+#include "CAN_Devices/Odrive_CAN_motors.h"
 #include "tim.h"
 
-extern DjiMotorGroup djiMotorGroupLowerId;
-extern DjiMotorGroup djiMotorGroupHigherId;
 
 extern osMessageQId qMotorTimeupHandle;
+
+motors_output_t motor_values;
+
+DjiMotorGroup  djiMotorGroupLowerId(&hfdcan2, true);
+DjiMotorGroup  djiMotorGroupHigherId(&hfdcan2, false);
+
+Odrive_CAN_motors odrv_motors[3]{
+    Odrive_CAN_motors(&hfdcan2, 1),
+    Odrive_CAN_motors(&hfdcan2, 2),
+    Odrive_CAN_motors(&hfdcan2, 3)
+};
 
 static void motorTimeupCallback(TIM_HandleTypeDef * htim){
     char descript[2] = "n";
     // if (tim_queue_enable){
-    //   // ST_LOGD("T");
         xQueueSendFromISR(qMotorTimeupHandle, descript, NULL);
     // }
 
     
 }
-extern volatile float angle_test;
+
+
 void motorRoutineTaskFunc(void const * argument)
 {
     // TODO
     char * __ptr;
     uint32_t cnt;
     // motor init
-    DjiCanMotorsInit();
+
 
     // start tim
     HAL_TIM_RegisterCallback(&htim6, HAL_TIM_PERIOD_ELAPSED_CB_ID, motorTimeupCallback);
@@ -37,14 +47,18 @@ void motorRoutineTaskFunc(void const * argument)
             // dji motor cal area
             for (int i = 0; i < 4; i++)
             {
-                djiMotorGroupLowerId.SetInput(i, angle_test, 0);
+                djiMotorGroupLowerId.SetInput(i, motor_values.rudder_motors[i],
+                    motor_values.type == CTRL_TYPE_ANGLE ? 
+                    MotorPID::PENG_CTRL_TYPE_POSITION : MotorPID::PENG_CTRL_TYPE_SPEED);
                 // djiMotorGroupHigherId.SetInput(i, 0, 0);
             }
             djiMotorGroupLowerId.output();
-            
             // djiMotorGroupHigherId->output();
 
             // odrive motor cal area
+            for (int i = 0; i < 3; i++){
+                odrv_motors[i].setSpeed(motor_values.vel_motors[i]);
+            }
 
 
             // end process

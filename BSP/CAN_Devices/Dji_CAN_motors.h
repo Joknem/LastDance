@@ -23,7 +23,7 @@ public:
 
     float get_angle(bool if_cal_circle);
 
-    float update(float _inputPos, float _inputVel);
+    float update(float _input, MotorPID::peng_ctrl_type_t _type);
 
     float angle;
     float speed;
@@ -53,9 +53,10 @@ public:
     
 
     DjiMotor motor[4];
-    void SetInput(uint8_t id, float p, float v);
+    void SetInput(uint8_t id, float input, MotorPID::peng_ctrl_type_t _type);
     void output(void);
     void stop(void);
+    
 private:
 
     void setCurrent(int16_t val[4]); 
@@ -65,10 +66,6 @@ private:
 
 
 };
-
-
-void DjiCanMotorsInit(void);
-// void DjiCanMotorsForceStop(void);
 
 
 

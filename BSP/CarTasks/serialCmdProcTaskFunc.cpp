@@ -10,7 +10,6 @@ static uint8_t *uart_point_buff = uart_cmd_buff[0];
 
 void dog_cmd_rx_callback(UART_HandleTypeDef *huart, uint16_t pos)
 {
-
     // ! clean DCache to sync data space
     // SCB_CleanDCache_by_Addr((uint32_t *)uart_point_buff + pos, 1);
     // SCB_InvalidateDCache_by_Addr((uint32_t *)uart_point_buff, pos);
@@ -31,27 +30,27 @@ void dog_cmd_rx_callback(UART_HandleTypeDef *huart, uint16_t pos)
     }
     HAL_UARTEx_ReceiveToIdle_DMA(huart, (uint8_t *)uart_point_buff, UART_BUFF_SIZE);
 }
-
-void dog_cmd_start(UART_HandleTypeDef *huart)
-{
-    assert_param(HAL_UART_RegisterRxEventCallback(huart, dog_cmd_rx_callback) == HAL_OK);
-    assert_param(HAL_UARTEx_ReceiveToIdle_DMA(huart, (uint8_t *)uart_point_buff, UART_BUFF_SIZE) == HAL_OK);
-}
-volatile float angle_test = 0.f;
+// volatile float angle_test = 0.f;
 static void process_input(const char * cmd, uint16_t pos){
     float a;
     sscanf(cmd, "%f", &a);
     if (fabsf(a) < 180){
-        angle_test = a;
-        ST_LOGI("update angle to : %.2f", angle_test);
+        // angle_test = a;
+        // ST_LOGI("update angle to : %.2f", angle_test);
     }
+}
+
+void cmd_server_start(UART_HandleTypeDef *huart)
+{
+    assert_param(HAL_UART_RegisterRxEventCallback(huart, dog_cmd_rx_callback) == HAL_OK);
+    assert_param(HAL_UARTEx_ReceiveToIdle_DMA(huart, (uint8_t *)uart_point_buff, UART_BUFF_SIZE) == HAL_OK);
 }
 
 void serialCmdProcTaskFunc(void const * argument)
 {
     char *dog_cmd_buff = NULL;
     ST_LOGI("CMD server start");
-    dog_cmd_start(&huart8);
+    cmd_server_start(&huart8);
     for (;;)
     {
         dog_cmd_buff = NULL;

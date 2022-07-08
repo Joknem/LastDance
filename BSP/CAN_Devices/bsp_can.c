@@ -6,10 +6,23 @@
 
 static bsp_can_device_t * root_dev = NULL;
 
-
-inline void __bsp_fdcan_send8(FDCAN_HandleTypeDef *hfdcan, uint32_t id, uint8_t *pTxData){
-	static FDCAN_TxHeaderTypeDef txHeader;
+static inline void __bsp_fdcan_send(FDCAN_HandleTypeDef *hfdcan, FDCAN_TxHeaderTypeDef * head, uint8_t *pTxData){
 	uint32_t freeLevel;
+	
+	if (HAL_FDCAN_AddMessageToTxFifoQ(hfdcan, head, pTxData) != HAL_OK){
+		ST_LOGE("Ret Error");
+		Error_Handler();
+	}
+	
+	freeLevel = HAL_FDCAN_GetTxFifoFreeLevel(hfdcan);
+	if (freeLevel == 0){
+		BSP_CAN_LOGE("hfdcan%d no free fifo", hfdcan == &hfdcan1 ? 1 : 2);
+		Error_Handler();
+	}
+}
+
+static inline void __bsp_fdcan_send8(FDCAN_HandleTypeDef *hfdcan, uint32_t id, uint8_t *pTxData){
+	static FDCAN_TxHeaderTypeDef txHeader;
 	txHeader.Identifier = id;
 	txHeader.IdType = FDCAN_STANDARD_ID;
 	txHeader.TxFrameType = FDCAN_DATA_FRAME;
@@ -19,18 +32,8 @@ inline void __bsp_fdcan_send8(FDCAN_HandleTypeDef *hfdcan, uint32_t id, uint8_t 
 	txHeader.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
 	txHeader.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
 	txHeader.MessageMarker = 0;
-	if (HAL_FDCAN_AddMessageToTxFifoQ(hfdcan, &txHeader, pTxData) != HAL_OK){
-		ST_LOGE("Ret Error");
-		Error_Handler();
-	}
 	
-	freeLevel = HAL_FDCAN_GetTxFifoFreeLevel(hfdcan);
-	if (freeLevel == 0){
-		BSP_CAN_LOGE("hfdcan%d no free fifo : %lu", hfdcan == &hfdcan1 ? 1 : 2, freeLevel);
-		// Error_Handler();
-	}else{
-		// uart_printf("fifo : %d\n", freeLevel);
-	}
+	__bsp_fdcan_send(hfdcan, &txHeader, pTxData);
 }
 
 
@@ -92,6 +95,10 @@ void bsp_can_delete_device(const bsp_can_device_t * device){
 	}
 }
 
-void bsp_can_send_message(bsp_can_device_t * dev, uint32_t id, uint8_t *data){
+void bsp_can_send_message(bsp_can_device_t * dev, FDCAN_TxHeaderTypeDef * head, uint8_t *data){
+	__bsp_fdcan_send(dev->hfdcan, head, data);
+}
+
+void bsp_can_send_message8(bsp_can_device_t * dev, uint32_t id, uint8_t *data){
 	__bsp_fdcan_send8(dev->hfdcan, id, data);
 }
