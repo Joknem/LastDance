@@ -46,9 +46,9 @@ private:
 
 class DjiMotorGroup{
 public:
-    DjiMotorGroup(){
-        DjiMotorGroup(&hfdcan2, true);
-    }
+    // DjiMotorGroup(){
+    //     DjiMotorGroup(&hfdcan2, true);
+    // }
     DjiMotorGroup(FDCAN_HandleTypeDef * _hfdcan, bool _isLowerIdentityGroup);
     
 
@@ -63,8 +63,6 @@ private:
     bsp_can_device_t can_devices;
     uint32_t ID_tx;
     bool is_force_stop = false;
-
-
 };
 
 

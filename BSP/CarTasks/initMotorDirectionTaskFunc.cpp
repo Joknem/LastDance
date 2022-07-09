@@ -28,18 +28,18 @@ void initMotorDirectionTaskFunc(void const * argument){
     EventBits_t ret_val;
     //TODO: give dji initial speed
     for(;;){
-        for(int i = 0; i < 3; i++){
-            init_status[i] = HAL_GPIO_ReadPin(HALL_Port[i], HALL_PIN[i]);
-            if(init_status[i] = HALL_OK){
-                xEventGroupSetBits(init_event_handle, (!HALL_OK) << i);
-                //TODO: stop relevant 2006 and get base angle
-            }
-        }
-        ret_val = xEventGroupWaitBits(init_event_handle, (!HALL_OK)|(!HALL_OK)|(!HALL_OK), pdFAIL, pdTRUE, 5);
-        if(ret_val & ALL_OK){
-            //TODO: angle control
-            vTaskDelete(NULL);
-            }
+        // for(int i = 0; i < 3; i++){
+        //     init_status[i] = HAL_GPIO_ReadPin(HALL_Port[i], HALL_PIN[i]);
+        //     if(init_status[i] = HALL_OK){
+        //         xEventGroupSetBits(init_event_handle, (!HALL_OK) << i);
+        //         //TODO: stop relevant 2006 and get base angle
+        //     }
+        // }
+        // ret_val = xEventGroupWaitBits(init_event_handle, (!HALL_OK)|(!HALL_OK)|(!HALL_OK), pdFAIL, pdTRUE, 5);
+        // if(ret_val & ALL_OK){
+        //     //TODO: angle control
+        //     vTaskDelete(NULL);
+        //     }
         osDelay(5);
     }
 }

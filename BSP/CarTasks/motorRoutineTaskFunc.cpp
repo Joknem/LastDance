@@ -12,11 +12,11 @@ motors_output_t motor_values;
 DjiMotorGroup  djiMotorGroupLowerId(&hfdcan2, true);
 DjiMotorGroup  djiMotorGroupHigherId(&hfdcan2, false);
 
-Odrive_CAN_motors odrv_motors[3]{
-    Odrive_CAN_motors(&hfdcan2, 1),
-    Odrive_CAN_motors(&hfdcan2, 2),
-    Odrive_CAN_motors(&hfdcan2, 3)
-};
+// Odrive_CAN_motors odrv_motors[3]{
+//     Odrive_CAN_motors(&hfdcan2, 1),
+//     Odrive_CAN_motors(&hfdcan2, 2),
+//     Odrive_CAN_motors(&hfdcan2, 3)
+// };
 
 static void motorTimeupCallback(TIM_HandleTypeDef * htim){
     char descript[2] = "n";
@@ -34,11 +34,11 @@ void motorRoutineTaskFunc(void const * argument)
     char * __ptr;
     uint32_t cnt;
     // motor init
-
-
     // start tim
     HAL_TIM_RegisterCallback(&htim6, HAL_TIM_PERIOD_ELAPSED_CB_ID, motorTimeupCallback);
     HAL_TIM_Base_Start_IT(&htim6);
+
+    ST_LOGI("Start motorRoutineTaskFunc");
     for (;;)
     {
 
@@ -56,9 +56,9 @@ void motorRoutineTaskFunc(void const * argument)
             // djiMotorGroupHigherId->output();
 
             // odrive motor cal area
-            for (int i = 0; i < 3; i++){
-                odrv_motors[i].setSpeed(motor_values.vel_motors[i]);
-            }
+            // for (int i = 0; i < 3; i++){
+                // odrv_motors[i].setSpeed(motor_values.vel_motors[i]);
+            // }
 
 
             // end process

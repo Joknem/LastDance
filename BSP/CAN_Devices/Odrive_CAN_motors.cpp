@@ -206,7 +206,7 @@ static bsp_can_rx_cb_ret_e __odrv_rx_process(FDCAN_RxHeaderTypeDef *pRxHeader, u
 	uint8_t __aligned(4) rx_data[8];
 	// odrv_heartbeat_data_t *odrv_data = (odrv_heartbeat_data_t *)rx_data;
     // Odrive_CAN_motors::Odrive_motor_t motor;
-	HAL_FDCAN_GetRxMessage(&hfdcan2, FDCAN_RX_FIFO0, pRxHeader, rx_data);
+	// HAL_FDCAN_GetRxMessage(&hfdcan2, FDCAN_RX_FIFO0, pRxHeader, rx_data);
 	odrv_id = pRxHeader->Identifier >> 5;
 	// odrv_type = pRxHeader->Identifier & 0x1F;
 	switch(odrv_id){
