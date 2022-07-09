@@ -61,10 +61,11 @@ void DjiCanMotorsForceStop(void){
 }
 
 // rx process
-static bsp_can_rx_cb_ret_e __dii_motors_rx_process(FDCAN_RxHeaderTypeDef *pRxHeader, uint8_t *pRxData)
+static bsp_can_rx_cb_ret_e __dji_motors_rx_process(FDCAN_RxHeaderTypeDef *pRxHeader, uint8_t *pRxData)
 {
 	int32_t id = pRxHeader->Identifier - CAN_DJI_M1_ID;
 	DjiMotorGroup * gp;
+
 	if (id > 7 || id < 0)
 	{
 		return BSP_CAN_RX_CB_VALUE_INVALID;
@@ -101,16 +102,16 @@ c++ class: motor group part
 DjiMotorGroup::DjiMotorGroup(FDCAN_HandleTypeDef *_hfdcan, bool _isLowerIdentityGroup)
 {
 	can_devices.hfdcan = _hfdcan;
-	can_devices.rx_cb = __dii_motors_rx_process;
+	can_devices.rx_cb = __dji_motors_rx_process;
 	ID_tx = _isLowerIdentityGroup == true ? CAN_DJI_L4ALL_ID : CAN_DJI_H4ALL_ID;
 	bsp_can_add_device(&can_devices);
 }
 
-void DjiMotorGroup::SetInput(uint8_t id, float p, float v){
+void DjiMotorGroup::SetInput(uint8_t id, float _input, MotorPID::peng_ctrl_type_t _type){
 	if (id > 4){
 		return;
 	}
-	motor[id].update(p, v);
+	motor[id].update(_input, _type);
 }
 
 void DjiMotorGroup::output(void){
@@ -134,7 +135,7 @@ void DjiMotorGroup::setCurrent(int16_t val[4]){
 	chassis_can_send_data[6] = val[3] >> 8;
 	chassis_can_send_data[7] = val[3];
 
-	bsp_can_send_message(&can_devices, ID_tx, chassis_can_send_data);
+	bsp_can_send_message8(&can_devices, ID_tx, chassis_can_send_data);
 }
 
 void DjiMotorGroup::stop(void){
@@ -152,12 +153,14 @@ c++ class: motor single part
 
 DjiMotor::DjiMotor(){
 	pid.SetTorqueLimit(0.80);
-	pid.dce.kp = 240.f;
-	pid.dce.kd = 4.f;
 
-	pid.dce.ki = 4.0;
-	pid.dce.kv = 1.0;
+	pid.pPos.kp = 10.f;
+	pid.pPos.ki = 0.0001f;
+	pid.pPos.kd = 10.f;
 
+	pid.pVel.kp = 10.f;
+	pid.pVel.ki = 0.001f;
+	pid.pVel.kd = 0.5f;
 	pid.angle = &angle;
 	pid.velocity = &speed;
 
@@ -174,8 +177,8 @@ float DjiMotor::get_angle(bool if_cal_circle){
 	}
 }
 
-float DjiMotor::update(float _inputPos, float _inputVel){
+float DjiMotor::update(float _input, MotorPID::peng_ctrl_type_t _type){
 	is_update = true;
-	output = pid.CalcDceOutput(_inputPos, _inputVel);
+	output = pid.CalPeng(_input, _type);
 	return output;
 }

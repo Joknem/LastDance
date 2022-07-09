@@ -23,7 +23,7 @@ public:
 
     float get_angle(bool if_cal_circle);
 
-    float update(float _inputPos, float _inputVel);
+    float update(float _input, MotorPID::peng_ctrl_type_t _type);
 
     float angle;
     float speed;
@@ -46,24 +46,23 @@ private:
 
 class DjiMotorGroup{
 public:
-    DjiMotorGroup(){
-        DjiMotorGroup(&hfdcan2, true);
-    }
+    // DjiMotorGroup(){
+    //     DjiMotorGroup(&hfdcan2, true);
+    // }
     DjiMotorGroup(FDCAN_HandleTypeDef * _hfdcan, bool _isLowerIdentityGroup);
     
 
-    DjiMotor motor[4];
-    void SetInput(uint8_t id, float p, float v);
+    void SetInput(uint8_t id, float _input, MotorPID::peng_ctrl_type_t _type);
     void output(void);
     void stop(void);
-private:
+    
+    DjiMotor motor[4];
 
-    void setCurrent(int16_t val[4]); 
-    bsp_can_device_t can_devices;
+private:
     uint32_t ID_tx;
     bool is_force_stop = false;
-
-
+    void setCurrent(int16_t val[4]); 
+    bsp_can_device_t can_devices;
 };
 
 
