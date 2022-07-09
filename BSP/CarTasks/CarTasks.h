@@ -22,6 +22,8 @@ typedef struct _motors_output_t {
     uint8_t type;
 } motors_output_t;
 
+extern motors_output_t motor_values;
+
 void initMotorDirectionTaskFunc(void const * argument);
 void motorRoutineTaskFunc(void const * argument);
 void serialCmdProcTaskFunc(void const * argument);
