@@ -20,9 +20,9 @@ TARGET = LastDance
 # building variables
 ######################################
 # debug build?
-DEBUG = 0
+DEBUG = 1
 # optimization
-OPT = -Os
+OPT = -Og
 
 
 #######################################
@@ -48,7 +48,6 @@ Core/Src/stm32h7xx_hal_msp.c \
 Core/Src/stm32h7xx_hal_timebase_tim.c \
 Core/Src/system_stm32h7xx.c \
 Core/Src/boot.c \
-BSP/CAN_Devices/bsp_can.c \
 Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_cortex.c \
 Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_rcc.c \
 Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_rcc_ex.c \
@@ -88,6 +87,7 @@ startup_stm32h750xx.s
 
 # C++ sources
 CPP_SOURCES = \
+BSP/CAN_Devices/bsp_can.cpp \
 BSP/ControllerPID/MotorPID.cpp \
 BSP/CarTasks/initMotorDirectionTaskFunc.cpp \
 BSP/CarTasks/serialCmdProcTaskFunc.cpp \
@@ -112,7 +112,7 @@ CP = $(GCC_PATH)/$(PREFIX)objcopy
 SZ = $(GCC_PATH)/$(PREFIX)size
 else
 CC = $(PREFIX)gcc
-CX = $(PREFIX)g++
+CX = $(PREFIX)c++
 AS = $(PREFIX)gcc -x assembler-with-cpp
 CP = $(PREFIX)objcopy
 SZ = $(PREFIX)size
@@ -162,11 +162,12 @@ C_INCLUDES =  \
 -IDrivers/CMSIS/Device/ST/STM32H7xx/Include \
 -IDrivers/CMSIS/Include
 
+# add_compile_options($<-x;assembler-with-cpp>)
 
 # compile gcc flags
-ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
+ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections -fno-common -fmessage-length=0 -x;assembler-with-cpp
 
-CFLAGS += $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
+CFLAGS += $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections -fno-common -fmessage-length=0
 
 ifeq ($(DEBUG), 1)
 CFLAGS += -g -gdwarf-2
@@ -206,12 +207,14 @@ vpath %.cpp $(sort $(dir $(CPP_SOURCES)))
 OBJECTS += $(addprefix $(BUILD_DIR)/,$(notdir $(ASM_SOURCES:.s=.o)))
 vpath %.s $(sort $(dir $(ASM_SOURCES)))
 
+# CXXFLAGS = $(CFLAGS)  
+
 $(BUILD_DIR)/%.o: %.cpp Makefile | $(BUILD_DIR) 
-	@$(CX) -c $(CFLAGS) $< -o $@
+	@$(CX) -c $(CFLAGS) -std=c++14 $< -o $@
 	@echo "[\033[32mcpp\033[0m] $@"
 
 $(BUILD_DIR)/%.o: %.c Makefile | $(BUILD_DIR) 
-	@$(CC) -c $(CFLAGS) $< -o $@
+	@$(CC) -c $(CFLAGS) -std=c11 $< -o $@
 	@echo "[\033[32m c \033[0m] $@"
 
 $(BUILD_DIR)/%.o: %.s Makefile | $(BUILD_DIR)

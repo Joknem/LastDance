@@ -4,7 +4,7 @@
 
 #include "bsp_can.h"
 
-class TemperBoard {
+class TemperBoard : public CanDevice{
 public:
     TemperBoard(FDCAN_HandleTypeDef *_hfdcan);
     
@@ -14,6 +14,8 @@ public:
     bool set_height_higher(float height);
     bool set_pull(bool p);
     void output(void);
+    
+    bsp_can_rx_cb_ret_e rx_cb(FDCAN_RxHeaderTypeDef *pRxHeader, uint8_t *pRxData) override;
 private:
     typedef union _temper_board_tx_msg_t{
         struct __packed{
@@ -27,9 +29,6 @@ private:
     } temper_board_tx_msg_t;
 
     temper_board_tx_msg_t info;
-
-
-    bsp_can_device_t can_devices;
 };
 
 

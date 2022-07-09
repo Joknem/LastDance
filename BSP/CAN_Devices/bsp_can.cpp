@@ -40,7 +40,7 @@ static inline void __bsp_fdcan_send8(FDCAN_HandleTypeDef *hfdcan, uint32_t id, u
 void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 {
 	FDCAN_RxHeaderTypeDef rx_header;
-	bsp_can_device_t const * dev = root_dev;
+	bsp_can_device_t * dev = root_dev;
 	uint8_t __aligned(4) rx_data[8];
 
 	while (HAL_FDCAN_GetRxFifoFillLevel(hfdcan, FDCAN_RX_FIFO0) > 0){
@@ -58,7 +58,7 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 }
 
 
-void bsp_can_add_device(bsp_can_device_t * device){
+static void bsp_can_add_device(bsp_can_device_t * device){
 	bsp_can_device_t * p = root_dev;
 	if (device == NULL){
 		return;
@@ -68,6 +68,7 @@ void bsp_can_add_device(bsp_can_device_t * device){
 	if (root_dev == NULL){
 		root_dev = device;
 	} else {
+
 		while (p->next != NULL) {
 			p = root_dev->next;
 		}
@@ -77,7 +78,7 @@ void bsp_can_add_device(bsp_can_device_t * device){
 	}
 }
 
-void bsp_can_delete_device(const bsp_can_device_t * device){
+static void bsp_can_delete_device(const bsp_can_device_t * device){
 	bsp_can_device_t * p = root_dev;
 	if (device == NULL){
 		return;
@@ -95,10 +96,25 @@ void bsp_can_delete_device(const bsp_can_device_t * device){
 	}
 }
 
-void bsp_can_send_message(bsp_can_device_t * dev, FDCAN_TxHeaderTypeDef * head, uint8_t *data){
-	__bsp_fdcan_send(dev->hfdcan, head, data);
+CanDevice::CanDevice(FDCAN_HandleTypeDef * _hfdcan){
+	hfdcan = _hfdcan;
+	bsp_can_add_device(this);
 }
 
-void bsp_can_send_message8(bsp_can_device_t * dev, uint32_t id, uint8_t *data){
-	__bsp_fdcan_send8(dev->hfdcan, id, data);
+CanDevice::~CanDevice(){
+	bsp_can_delete_device(this);
+}
+
+bsp_can_rx_cb_ret_e CanDevice::rx_cb(FDCAN_RxHeaderTypeDef *pRxHeader, uint8_t *pRxData){
+	ST_LOGE("Child class not OK");
+	return BSP_CAN_RX_CB_VALUE_INVALID;
+}
+
+
+void CanDevice::can_send_message(FDCAN_TxHeaderTypeDef * head, uint8_t *data){
+	__bsp_fdcan_send(hfdcan, head, data);
+}
+
+void CanDevice::can_send_message8(uint32_t id, uint8_t *data){
+	__bsp_fdcan_send8(hfdcan, id, data);
 }

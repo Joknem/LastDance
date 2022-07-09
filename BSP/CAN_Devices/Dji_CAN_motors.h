@@ -44,13 +44,13 @@ private:
 
 
 
-class DjiMotorGroup{
+class DjiMotorGroup : public CanDevice{
 public:
-    DjiMotorGroup(){
-        DjiMotorGroup(&hfdcan2, true);
-    }
+    // DjiMotorGroup():CanDevice{
+    //     DjiMotorGroup(&hfdcan2, true);
+    // }
     DjiMotorGroup(FDCAN_HandleTypeDef * _hfdcan, bool _isLowerIdentityGroup);
-    
+    ~DjiMotorGroup();
 
     DjiMotor motor[4];
     void SetInput(uint8_t id, float input, MotorPID::peng_ctrl_type_t _type);
@@ -60,9 +60,11 @@ public:
 private:
 
     void setCurrent(int16_t val[4]); 
-    bsp_can_device_t can_devices;
+    // bsp_can_device_t can_devices;
     uint32_t ID_tx;
     bool is_force_stop = false;
+
+    bsp_can_rx_cb_ret_e rx_cb(FDCAN_RxHeaderTypeDef *pRxHeader, uint8_t *pRxData) override;
 
 
 };

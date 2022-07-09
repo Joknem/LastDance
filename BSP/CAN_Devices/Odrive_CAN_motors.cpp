@@ -3,14 +3,9 @@
 #include "string.h"
 
 
-static bsp_can_rx_cb_ret_e __odrv_rx_process(FDCAN_RxHeaderTypeDef *pRxHeader, uint8_t *pRxData);
-
-Odrive_CAN_motors::Odrive_CAN_motors(FDCAN_HandleTypeDef *_hfdcan, uint8_t _id){
+Odrive_CAN_motors::Odrive_CAN_motors(FDCAN_HandleTypeDef *_hfdcan, uint8_t _id):CanDevice(_hfdcan){
 	ID = _id;
-	can_odrv_devices.hfdcan = _hfdcan;
-    can_odrv_devices.rx_cb = __odrv_rx_process;
     T_motor.odrive_set_axis.axis_node_id = ID << 5;
-    bsp_can_add_device(&can_odrv_devices);
 }
 
 typedef union _float_to_uint8_t {
@@ -195,19 +190,21 @@ uint8_t Odrive_CAN_motors::send_msg(Odrive_Command cmd){
 		default:
 			break;
 	}
-	bsp_can_send_message(&can_odrv_devices, &odrive_tx_header, (uint8_t *)pack.raw);
+	can_send_message(&odrive_tx_header, (uint8_t *)pack.raw);
     return 0;
 }
 
-static bsp_can_rx_cb_ret_e __odrv_rx_process(FDCAN_RxHeaderTypeDef *pRxHeader, uint8_t *pRxData){
+bsp_can_rx_cb_ret_e Odrive_CAN_motors::rx_cb(FDCAN_RxHeaderTypeDef *pRxHeader, uint8_t *pRxData){
 	// TODO need to be overwrite
 	uint8_t odrv_id;
 	// uint8_t odrv_type;
-	uint8_t __aligned(4) rx_data[8];
+	// uint8_t __aligned(4) rx_data[8];
 	// odrv_heartbeat_data_t *odrv_data = (odrv_heartbeat_data_t *)rx_data;
     // Odrive_CAN_motors::Odrive_motor_t motor;
-	HAL_FDCAN_GetRxMessage(&hfdcan2, FDCAN_RX_FIFO0, pRxHeader, rx_data);
-	odrv_id = pRxHeader->Identifier >> 5;
+	// HAL_FDCAN_GetRxMessage(&hfdcan2, FDCAN_RX_FIFO0, pRxHeader, rx_data);
+	if (ID != pRxHeader->Identifier >> 5){
+		return BSP_CAN_RX_CB_VALUE_INVALID;
+	}
 	// odrv_type = pRxHeader->Identifier & 0x1F;
 	switch(odrv_id){
 		case Odrive_CAN_motors::AXIS0_NODE_ID:

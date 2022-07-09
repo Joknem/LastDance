@@ -40,7 +40,7 @@ c function part
 // rx process
 extern DjiMotorGroup  djiMotorGroupLowerId;
 extern DjiMotorGroup  djiMotorGroupHigherId;
-bsp_can_rx_cb_ret_e __dji_motors_rx_process(FDCAN_RxHeaderTypeDef *pRxHeader, uint8_t *pRxData)
+bsp_can_rx_cb_ret_e DjiMotorGroup::rx_cb(FDCAN_RxHeaderTypeDef *pRxHeader, uint8_t *pRxData)
 {
 	int32_t id = pRxHeader->Identifier - CAN_DJI_M1_ID;
 	DjiMotorGroup * gp;
@@ -74,13 +74,14 @@ c++ class: motor group part
 ********************************
 */
 
-DjiMotorGroup::DjiMotorGroup(FDCAN_HandleTypeDef *_hfdcan, bool _isLowerIdentityGroup)
+DjiMotorGroup::DjiMotorGroup(FDCAN_HandleTypeDef *_hfdcan, bool _isLowerIdentityGroup):CanDevice(_hfdcan)
 {
-	can_devices.hfdcan = _hfdcan;
-	can_devices.rx_cb = __dji_motors_rx_process;
 	ID_tx = _isLowerIdentityGroup == true ? CAN_DJI_L4ALL_ID : CAN_DJI_H4ALL_ID;
-	bsp_can_add_device(&can_devices);
 }
+
+DjiMotorGroup::~DjiMotorGroup(){
+}
+
 
 void DjiMotorGroup::SetInput(uint8_t id, float input, MotorPID::peng_ctrl_type_t _type){
 	if (id > 4){
@@ -110,7 +111,7 @@ void DjiMotorGroup::setCurrent(int16_t val[4]){
 	chassis_can_send_data[6] = val[3] >> 8;
 	chassis_can_send_data[7] = val[3];
 
-	bsp_can_send_message8(&can_devices, ID_tx, chassis_can_send_data);
+	can_send_message8(ID_tx, chassis_can_send_data);
 }
 
 void DjiMotorGroup::stop(void){

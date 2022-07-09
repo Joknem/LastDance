@@ -1,4 +1,4 @@
 {
-    "host":     "192.168.137.208",
+    "host":     "192.168.137.122",
     "firmware": "build/LastDance.bin"
 }

@@ -9,7 +9,7 @@
 
 
 
-bsp_can_rx_cb_ret_e __temper_board_rx_process(FDCAN_RxHeaderTypeDef *pRxHeader, uint8_t *pRxData){
+bsp_can_rx_cb_ret_e TemperBoard::rx_cb(FDCAN_RxHeaderTypeDef *pRxHeader, uint8_t *pRxData) {
     if (pRxHeader->Identifier != RETURNS_PACK_ID){
         return BSP_CAN_RX_CB_VALUE_INVALID;
     }
@@ -20,11 +20,7 @@ bsp_can_rx_cb_ret_e __temper_board_rx_process(FDCAN_RxHeaderTypeDef *pRxHeader, 
 }
 
 
-TemperBoard::TemperBoard(FDCAN_HandleTypeDef *_hfdcan){
-    can_devices.hfdcan = _hfdcan;
-    can_devices.rx_cb = __temper_board_rx_process;
-    bsp_can_add_device(&can_devices);
-
+TemperBoard::TemperBoard(FDCAN_HandleTypeDef *_hfdcan):CanDevice(_hfdcan){
     for (int i = 0; i <  8; i++){
         info.raw[i] = 0;
     }
@@ -82,5 +78,5 @@ bool TemperBoard::set_pull(bool p){
 }
 
 void TemperBoard::output(void){
-    bsp_can_send_message8(&can_devices, COMMAND_PACK_ID, info.raw);
+    can_send_message8(COMMAND_PACK_ID, info.raw);
 }

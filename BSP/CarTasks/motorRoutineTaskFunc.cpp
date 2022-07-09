@@ -9,14 +9,9 @@ extern osMessageQId qMotorTimeupHandle;
 
 motors_output_t motor_values;
 
+
 DjiMotorGroup  djiMotorGroupLowerId(&hfdcan2, true);
 DjiMotorGroup  djiMotorGroupHigherId(&hfdcan2, false);
-
-Odrive_CAN_motors odrv_motors[3]{
-    Odrive_CAN_motors(&hfdcan2, 1),
-    Odrive_CAN_motors(&hfdcan2, 2),
-    Odrive_CAN_motors(&hfdcan2, 3)
-};
 
 static void motorTimeupCallback(TIM_HandleTypeDef * htim){
     char descript[2] = "n";
@@ -32,13 +27,22 @@ void motorRoutineTaskFunc(void const * argument)
 {
     // TODO
     char * __ptr;
-    uint32_t cnt;
+    uint32_t cnt = 0;
     // motor init
+    // Odrive_CAN_motors odrv_motors[3]{
+    //     Odrive_CAN_motors(&hfdcan2, 1),
+    //     Odrive_CAN_motors(&hfdcan2, 2),
+    //     Odrive_CAN_motors(&hfdcan2, 3)
+    // };
 
 
     // start tim
     HAL_TIM_RegisterCallback(&htim6, HAL_TIM_PERIOD_ELAPSED_CB_ID, motorTimeupCallback);
     HAL_TIM_Base_Start_IT(&htim6);
+    
+    //? test can
+    motor_values.vel_motors[0] = 5.0;
+
     for (;;)
     {
 

@@ -102,6 +102,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
   fdcanfilter();
 
+
   ST_LOGI("Welcome");
 
   /* USER CODE END 2 */

@@ -2,7 +2,7 @@
 #define __BSP_CAN_H
 #include "bsp_can.h"
 
-class Odrive_CAN_motors
+class Odrive_CAN_motors: public CanDevice
 {
 public:
     enum Odrive_ID_e
@@ -112,7 +112,7 @@ public:
 private:
     uint8_t ID;
     uint8_t send_msg(Odrive_Command cmd);
-    bsp_can_device_t can_odrv_devices;
+    bsp_can_rx_cb_ret_e rx_cb(FDCAN_RxHeaderTypeDef *pRxHeader, uint8_t *pRxData) override;
 };
 
 #endif
